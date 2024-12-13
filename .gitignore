@@ -1,0 +1,9 @@
+*.exe
+*.pdb
+*.dll
+*.pch
+.vs/*
+x64/*
+MOS6502_Emulator/x64/*
+MOS6502_Emulator/x64/Debug/*
+MOS6502_Emulator/x64/Release/*
