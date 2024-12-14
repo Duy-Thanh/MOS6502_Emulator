@@ -62,10 +62,12 @@ namespace MOS6502 {
 
 	// Memory operations
 	uint8_t MOS6502_CPU::MOS6502_CPU_MemRead(uint16_t addr) {
+		std::cout << "CPU: MemRead at address 0x" << std::hex << addr << std::endl;
 		return this->memory->Read(addr);
 	}
 
 	void MOS6502_CPU::MOS6502_CPU_MemWrite(uint16_t addr, uint8_t value) {
+		std::cout << "CPU: MemWrite at address 0x" << std::hex << addr << " with data 0x" << std::hex << value << std::endl;
 		this->memory->Write(addr, value);
 	}
 
@@ -105,6 +107,7 @@ namespace MOS6502 {
 	}
 
 	uint8_t MOS6502_CPU::MOS6502_CPU_Fetch() {
+		std::cout << "CPU: Fetch instruction" << std::endl;
 		uint8_t data = this->MOS6502_CPU_MemRead(this->cpu->PC);
 		this->cpu->PC++;
 		return data;
@@ -128,6 +131,7 @@ namespace MOS6502 {
 	}
 
 	uint8_t MOS6502_CPU::MOS6502_CPU_GetInstructionCycles(uint8_t opcode) {
+		std::cout << "GetInstructionCycles: opcode = 0x" << std::hex << (int)opcode << std::endl;
 		return 2;
 	}
 
@@ -140,6 +144,7 @@ namespace MOS6502 {
 	}
 
 	bool MOS6502_CPU::MOS6502_CPU_Complete() {
+		//std::cout << "CPU: Completed" << std::endl;
 		return this->cycles_remaining == 0;
 	}
 }													 
