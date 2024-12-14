@@ -175,4 +175,168 @@ namespace MOS6502 {
 		//std::cout << "CPU: Completed" << std::endl;
 		return this->cycles_remaining == 0;
 	}
+
+	/**
+	 * // Helper function to check page boundary crossing
+bool MOS6502_CPU::PageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {
+    return (addr1 & 0xFF00) != (addr2 & 0xFF00);
+}
+
+// Immediate addressing: #$00
+uint16_t MOS6502_CPU::AddrImmediate() {
+    return cpu.PC++;
+}
+
+// Zero Page addressing: $00
+uint16_t MOS6502_CPU::AddrZeroPage() {
+    return Fetch();
+}
+
+// Zero Page,X addressing: $00,X
+uint16_t MOS6502_CPU::AddrZeroPageX() {
+    uint8_t addr = Fetch();
+    return (addr + cpu.X) & 0xFF;  // Zero-page wrap
+}
+
+// Zero Page,Y addressing: $00,Y
+uint16_t MOS6502_CPU::AddrZeroPageY() {
+    uint8_t addr = Fetch();
+    return (addr + cpu.Y) & 0xFF;  // Zero-page wrap
+}
+
+// Absolute addressing: $0000
+uint16_t MOS6502_CPU::AddrAbsolute() {
+    return FetchWord();
+}
+
+// Absolute,X addressing: $0000,X
+uint16_t MOS6502_CPU::AddrAbsoluteX() {
+    uint16_t base = FetchWord();
+    uint16_t addr = base + cpu.X;
+    
+    // Some instructions add a cycle if page boundary is crossed
+    if (PageBoundaryCrossed(base, addr)) {
+        cycles_remaining++;
+    }
+    
+    return addr;
+}
+
+// Absolute,Y addressing: $0000,Y
+uint16_t MOS6502_CPU::AddrAbsoluteY() {
+    uint16_t base = FetchWord();
+    uint16_t addr = base + cpu.Y;
+    
+    // Some instructions add a cycle if page boundary is crossed
+    if (PageBoundaryCrossed(base, addr)) {
+        cycles_remaining++;
+    }
+    
+    return addr;
+}
+
+// Indirect addressing: ($0000)
+uint16_t MOS6502_CPU::AddrIndirect() {
+    uint16_t ptr = FetchWord();
+    
+    // Simulate 6502 bug: if pointer is at page boundary
+    // high byte is fetched from start of page rather than next page
+    if ((ptr & 0xFF) == 0xFF) {
+        uint8_t low = Read(ptr);
+        uint8_t high = Read(ptr & 0xFF00);
+        return (high << 8) | low;
+    }
+    
+    return ReadWord(ptr);
+}
+
+// Indirect,X addressing: ($00,X)
+uint16_t MOS6502_CPU::AddrIndirectX() {
+    uint8_t ptr = Fetch();
+    ptr += cpu.X;  // Zero-page wrap
+    
+    uint8_t low = Read(ptr & 0xFF);
+    uint8_t high = Read((ptr + 1) & 0xFF);
+    
+    return (high << 8) | low;
+}
+
+// Indirect,Y addressing: ($00),Y
+uint16_t MOS6502_CPU::AddrIndirectY() {
+    uint8_t ptr = Fetch();
+    
+    uint8_t low = Read(ptr);
+    uint8_t high = Read((ptr + 1) & 0xFF);
+    uint16_t base = (high << 8) | low;
+    uint16_t addr = base + cpu.Y;
+    
+    // Some instructions add a cycle if page boundary is crossed
+    if (PageBoundaryCrossed(base, addr)) {
+        cycles_remaining++;
+    }
+    
+    return addr;
+}
+
+void MOS6502_CPU::UpdateZeroAndNegativeFlags(uint8_t value) {
+    SetFlag(ZERO, value == 0);
+    SetFlag(NEGATIVE, value & 0x80);
+}
+
+void MOS6502_CPU::LDA(uint16_t addr) {
+    cpu.A = Read(addr);
+    UpdateZeroAndNegativeFlags(cpu.A);
+}
+
+void MOS6502_CPU::LDX(uint16_t addr) {
+    cpu.X = Read(addr);
+    UpdateZeroAndNegativeFlags(cpu.X);
+}
+
+void MOS6502_CPU::LDY(uint16_t addr) {
+    cpu.Y = Read(addr);
+    UpdateZeroAndNegativeFlags(cpu.Y);
+}
+
+void MOS6502_CPU::STA(uint16_t addr) {
+    Write(addr, cpu.A);
+}
+
+void MOS6502_CPU::STX(uint16_t addr) {
+    Write(addr, cpu.X);
+}
+
+void MOS6502_CPU::STY(uint16_t addr) {
+    Write(addr, cpu.Y);
+}
+
+void MOS6502_CPU::ExecuteInstruction(uint8_t opcode) {
+    switch (opcode) {
+        // LDA
+        case 0xA9: LDA(AddrImmediate()); break;  // LDA Immediate
+        case 0xA5: LDA(AddrZeroPage()); break;   // LDA Zero Page
+        case 0xB5: LDA(AddrZeroPageX()); break;  // LDA Zero Page,X
+        case 0xAD: LDA(AddrAbsolute()); break;   // LDA Absolute
+        case 0xBD: LDA(AddrAbsoluteX()); break;  // LDA Absolute,X
+        case 0xB9: LDA(AddrAbsoluteY()); break;  // LDA Absolute,Y
+        case 0xA1: LDA(AddrIndirectX()); break;  // LDA (Indirect,X)
+        case 0xB1: LDA(AddrIndirectY()); break;  // LDA (Indirect),Y
+
+        // STA
+        case 0x85: STA(AddrZeroPage()); break;   // STA Zero Page
+        case 0x95: STA(AddrZeroPageX()); break;  // STA Zero Page,X
+        case 0x8D: STA(AddrAbsolute()); break;   // STA Absolute
+        case 0x9D: STA(AddrAbsoluteX()); break;  // STA Absolute,X
+        case 0x99: STA(AddrAbsoluteY()); break;  // STA Absolute,Y
+        case 0x81: STA(AddrIndirectX()); break;  // STA (Indirect,X)
+        case 0x91: STA(AddrIndirectY()); break;  // STA (Indirect),Y
+
+        // Add more instructions here...
+
+        default:
+            std::cout << "Unknown opcode: 0x" << std::hex << (int)opcode << std::endl;
+            break;
+    }
+}
+	 */
 }													 

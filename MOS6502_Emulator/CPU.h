@@ -57,6 +57,32 @@ namespace MOS6502 {
 		uint16_t MOS6502_CPU_FetchWord();
 		void MOS6502_CPU_Push(uint8_t value);
 		uint8_t MOS6502_CPU_Pop();
+
+		// Addressing modes
+		uint16_t MOS6502_CPU_AddrImmediate();    // #$00
+		uint16_t MOS6502_CPU_AddrZeroPage();     // $00
+		uint16_t MOS6502_CPU_AddrZeroPageX();    // $00,X
+		uint16_t MOS6502_CPU_AddrZeroPageY();    // $00,Y
+		uint16_t MOS6502_CPU_AddrAbsolute();     // $0000
+		uint16_t MOS6502_CPU_AddrAbsoluteX();    // $0000,X
+		uint16_t MOS6502_CPU_AddrAbsoluteY();    // $0000,Y
+		uint16_t MOS6502_CPU_AddrIndirect();     // ($0000)
+		uint16_t MOS6502_CPU_AddrIndirectX();    // ($00,X)
+		uint16_t MOS6502_CPU_AddrIndirectY();    // ($00),Y
+
+		// Instructions
+		void MOS6502_CPU_LDA(uint16_t addr);  // Load Accumulator
+		void MOS6502_CPU_LDX(uint16_t addr);  // Load X Register
+		void MOS6502_CPU_LDY(uint16_t addr);  // Load Y Register
+		void MOS6502_CPU_STA(uint16_t addr);  // Store Accumulator
+		void MOS6502_CPU_STX(uint16_t addr);  // Store X Register
+		void MOS6502_CPU_STY(uint16_t addr);  // Store Y Register
+
+		// Add cycle counting for page boundary crosses
+		bool MOS6502_CPU_PageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
+
+		// Helper for setting Zero and Negative flags
+		void MOS6502_CPU_UpdateZeroAndNegativeFlags(uint8_t value);
 	public:
 		MOS6502_CPU();
 		~MOS6502_CPU();
