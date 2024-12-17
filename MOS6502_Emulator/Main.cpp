@@ -5,6 +5,7 @@
 #include <thread>
 
 int main() {
+	std::cout << "MAIN: Machine starting..." << std::endl;
 	std::cout << std::endl << std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(2));
 

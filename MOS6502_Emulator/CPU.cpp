@@ -8,7 +8,7 @@ namespace MOS6502 {
 		if (this->cpu == nullptr) {
 			std::cout << "CPU: CPU is not initialized before. Initializing CPU..." << std::endl;
 			this->cpu = new CPU();
-			std::cout << "CPU: CPU is initialized addr=0x" << std::hex << (uint32_t)this->cpu << " var_addr=0x" << std::hex << (uint32_t)&this->cpu << std::endl;
+			std::cout << "CPU: CPU is initialized addr=0x" << std::hex << (uint32_t)this->cpu << " va_addr=0x" << std::hex << (uint32_t)&this->cpu << std::endl;
 		}
 
 		std::cout << "MEM: CPU is requesting initialize the memory" << std::endl;
@@ -17,7 +17,7 @@ namespace MOS6502 {
 		if (this->memory == nullptr) {
 			std::cout << "MEM: Memory is not initialized before. Initializing memory..." << std::endl;
 			this->memory = new MOS6502_Memory();
-			std::cout << "MEM: Memory is initialized addr=0x" << std::hex << (uint32_t)this->memory << " var_addr=0x" << std::hex << (uint32_t)&this->memory << std::endl;
+			std::cout << "MEM: Memory is initialized addr=0x" << std::hex << (uint32_t)this->memory << " va_addr=0x" << std::hex << (uint32_t)&this->memory << std::endl;
 		}
 
 		std::cout << "CPU: CPU Reset requested" << std::endl;
@@ -29,7 +29,7 @@ namespace MOS6502 {
 		if (this->cpu) {
 			std::cout << "CPU: CPU was initialized. Continue to shutdown the CPU" << std::endl;
 			try {
-				std::cout << "CPU: Shutting down the CPU addr=0x" << std::hex << (uint32_t)this->cpu << " var_addr=0x" << (uint32_t)&this->cpu << std::endl;
+				std::cout << "CPU: Shutting down the CPU addr=0x" << std::hex << (uint32_t)this->cpu << " va_addr=0x" << (uint32_t)&this->cpu << std::endl;
 				delete this->cpu;
 				std::cout << "CPU: CPU shutdown completed!" << std::endl;
 			}
@@ -56,6 +56,14 @@ namespace MOS6502 {
 				this->cycles = 0;
 
 				std::cout << "CPU: Setting up the CPU was successfully!" << std::endl;
+
+				std::cout << "CPU: Current registers value:" << std::endl;
+				
+				// PRINT DIAGNOSTICS
+				std::cout << "CPU:       A (va_addr=0x" << std::hex << (uint32_t)&this->cpu->A << ") value=0x" << std::hex << (unsigned int)this->cpu->A << std::endl;
+				std::cout << "CPU:       P (va_addr=0x" << std::hex << (uint32_t)&this->cpu->P << ") value=0x" << std::hex << (unsigned int)this->cpu->P << std::endl;
+				std::cout << "CPU:       S (va_addr=0x" << std::hex << (uint32_t)&this->cpu->S << ") value=0x" << std::hex << (unsigned int)this->cpu->S << std::endl;
+				std::cout << "CPU:       X (va_addr=0x" << std::hex << (uint32_t)&this->cpu->X << ") value=0x" << std::hex << (unsigned int)this->cpu->X << std::endl;
 
 			}
 			catch (const std::exception& e) {
@@ -133,10 +141,10 @@ namespace MOS6502 {
 	uint8_t MOS6502_CPU::MOS6502_CPU_Fetch() {
 		std::cout << "CPU: Fetch instruction" << std::endl;
 		uint8_t data = this->MOS6502_CPU_MemRead(this->cpu->PC);
-		std::cout << "CPU: Fetch(): PC = 0x" << std::hex << (int)this->cpu->PC << std::endl;
+		std::cout << "CPU: Fetch(): PC = 0x" << std::hex << (unsigned int)this->cpu->PC << std::endl;
 		this->cpu->PC++;
 		std::cout << "CPU: Fetch(): Increasing PC register with 0x1" << std::endl;
-		std::cout << "CPU: Fetch(): Current PC = 0x" << std::hex << (int)this->cpu->PC << std::endl;
+		std::cout << "CPU: Fetch(): Current PC = 0x" << std::hex << (unsigned int)this->cpu->PC << std::endl;
 		return data;
 	}
 
@@ -158,15 +166,16 @@ namespace MOS6502 {
 	}
 
 	uint8_t MOS6502_CPU::MOS6502_CPU_GetInstructionCycles(uint8_t opcode) {
-		std::cout << "CPU: GetInstructionCycles: opcode = 0x" << std::hex << (int)opcode << std::endl;
+		std::cout << "CPU: GetInstructionCycles: opcode = 0x" << std::hex << (unsigned int)opcode << std::endl;
 		return 2;
 	}
 
 	void MOS6502_CPU::MOS6502_CPU_ExecuteInstruction(uint8_t opcode) {
-		std::cout << "CPU: ExecuteInstruction: opcode = 0x" << std::hex << (int)opcode << std::endl;
+		std::cout << "CPU: ExecuteInstruction: opcode = 0x" << std::hex << (unsigned int)opcode << std::endl;
 		switch (opcode) {
 		default:
-			std::cout << "CPU: ExecutionInstruction: Unknown opcode: 0x" << std::hex << (int)opcode << std::endl;
+			std::cout << "CPU: CPU has received unknown opcode when trying execute instruction. Jumping to FAILBACK_DEFAULT_ACTION!" << std::endl;
+			std::cout << "CPU: ExecutionInstruction: FAILBACK_DEFAULT_ACTION: Unknown opcode: 0x" << std::hex << (unsigned int)opcode << std::endl;
 			break;
 		}
 	}
@@ -176,65 +185,66 @@ namespace MOS6502 {
 		return this->cycles_remaining == 0;
 	}
 
+	// Helper function to check page boundary crossing
+	bool MOS6502_CPU::MOS6502_CPU_PageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {
+		return (addr1 & 0xFF00) != (addr2 & 0xFF00);
+	}
+
+	// Immediate addressing: #$00
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrImmediate() {
+		return this->cpu->PC++;
+	}
+
+	// Zero Page addressing: $00
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrZeroPage() {
+		return this->MOS6502_CPU_Fetch();
+	}
+
+	// Zero Page,X addressing: $00,X
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrZeroPageX() {
+		uint8_t addr = this->MOS6502_CPU_Fetch();
+		return (addr + this->cpu->X) & 0xFF;  // Zero-page wrap
+	}
+
+	// Zero Page,Y addressing: $00,Y
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrZeroPageY() {
+		uint8_t addr = this->MOS6502_CPU_Fetch();
+		return (addr + this->cpu->Y) & 0xFF;  // Zero-page wrap
+	}
+
+	// Absolute addressing: $0000
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrAbsolute() {
+		return this->MOS6502_CPU_FetchWord();
+	}
+
+	// Absolute,X addressing: $0000,X
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrAbsoluteX() {
+		uint16_t base = this->MOS6502_CPU_FetchWord();
+		uint16_t addr = base + this->cpu->X;
+
+		// Some instructions add a cycle if page boundary is crossed
+		if (this->MOS6502_CPU_PageBoundaryCrossed(base, addr)) {
+			this->cycles_remaining++;
+		}
+
+		return addr;
+	}
+
+	// Absolute,Y addressing: $0000,Y
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrAbsoluteY() {
+		uint16_t base = this->MOS6502_CPU_FetchWord();
+		uint16_t addr = base + this->cpu->Y;
+
+		// Some instructions add a cycle if page boundary is crossed
+		if (this->MOS6502_CPU_PageBoundaryCrossed(base, addr)) {
+			this->cycles_remaining++;
+		}
+
+		return addr;
+	}
+
 	/**
-	 * // Helper function to check page boundary crossing
-bool MOS6502_CPU::PageBoundaryCrossed(uint16_t addr1, uint16_t addr2) {
-    return (addr1 & 0xFF00) != (addr2 & 0xFF00);
-}
-
-// Immediate addressing: #$00
-uint16_t MOS6502_CPU::AddrImmediate() {
-    return cpu.PC++;
-}
-
-// Zero Page addressing: $00
-uint16_t MOS6502_CPU::AddrZeroPage() {
-    return Fetch();
-}
-
-// Zero Page,X addressing: $00,X
-uint16_t MOS6502_CPU::AddrZeroPageX() {
-    uint8_t addr = Fetch();
-    return (addr + cpu.X) & 0xFF;  // Zero-page wrap
-}
-
-// Zero Page,Y addressing: $00,Y
-uint16_t MOS6502_CPU::AddrZeroPageY() {
-    uint8_t addr = Fetch();
-    return (addr + cpu.Y) & 0xFF;  // Zero-page wrap
-}
-
-// Absolute addressing: $0000
-uint16_t MOS6502_CPU::AddrAbsolute() {
-    return FetchWord();
-}
-
-// Absolute,X addressing: $0000,X
-uint16_t MOS6502_CPU::AddrAbsoluteX() {
-    uint16_t base = FetchWord();
-    uint16_t addr = base + cpu.X;
-    
-    // Some instructions add a cycle if page boundary is crossed
-    if (PageBoundaryCrossed(base, addr)) {
-        cycles_remaining++;
-    }
-    
-    return addr;
-}
-
-// Absolute,Y addressing: $0000,Y
-uint16_t MOS6502_CPU::AddrAbsoluteY() {
-    uint16_t base = FetchWord();
-    uint16_t addr = base + cpu.Y;
-    
-    // Some instructions add a cycle if page boundary is crossed
-    if (PageBoundaryCrossed(base, addr)) {
-        cycles_remaining++;
-    }
-    
-    return addr;
-}
-
+	 *
 // Indirect addressing: ($0000)
 uint16_t MOS6502_CPU::AddrIndirect() {
     uint16_t ptr = FetchWord();
