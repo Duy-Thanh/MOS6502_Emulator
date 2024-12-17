@@ -2,8 +2,17 @@
 *.pdb
 *.dll
 *.pch
+*.obj
+*.lib
+*.ilk
+*.log
+*.map
+*.pdb
 .vs/*
 x64/*
 MOS6502_Emulator/x64/*
 MOS6502_Emulator/x64/Debug/*
 MOS6502_Emulator/x64/Release/*
+CrashHandler/x64/*
+CrashHandler/x64/Debug/*
+CrashHandler/x64/Release/*
