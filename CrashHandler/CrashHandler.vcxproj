@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{d008fe12-4f2c-42b4-867c-80bfd7c6e0a8}</ProjectGuid>
-    <RootNamespace>MOS6502Emulator</RootNamespace>
+    <ProjectGuid>{e798c585-3cc4-4d28-939e-bc22c601d3ef}</ProjectGuid>
+    <RootNamespace>CrashHandler</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -118,6 +118,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,15 +132,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CPU.h" />
-    <ClInclude Include="Memory.h" />
-    <ClInclude Include="RC5.h" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="RC5.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CPU.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Memory.cpp" />
-    <ClCompile Include="RC5.cpp" />
+    <ClInclude Include="RC5.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

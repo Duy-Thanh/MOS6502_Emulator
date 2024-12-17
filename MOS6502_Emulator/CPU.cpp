@@ -65,6 +65,7 @@ namespace MOS6502 {
 				std::cout << "CPU:       S (va_addr=0x" << std::hex << (uint32_t)&this->cpu->S << ") value=0x" << std::hex << (unsigned int)this->cpu->S << std::endl;
 				std::cout << "CPU:       X (va_addr=0x" << std::hex << (uint32_t)&this->cpu->X << ") value=0x" << std::hex << (unsigned int)this->cpu->X << std::endl;
 
+
 			}
 			catch (const std::exception& e) {
 				std::cout << "CPU: EXCEPTION: " << e.what() << std::endl;
