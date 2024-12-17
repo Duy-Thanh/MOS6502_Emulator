@@ -1,9 +1,12 @@
 #include <iostream>
 #include <ctime>
 #include <sstream>
+#include <thread>
 #include "RC5.h"
 
 #define PSAPI_VERSION 1
+#define NOMINMAX
+
 #include <Windows.h>
 #include <Psapi.h>
 #include <DbgHelp.h>
@@ -97,6 +100,66 @@ unsigned int getHex(const char* str) {
 	}
 }
 
+std::string DecryptRC5(const std::vector<unsigned char>& encryptedData, const std::vector<unsigned char>& key) {
+	RC5Simple rc5;
+
+	// Create mutable copies of the input vectors since RC5Simple methods require non-const references
+	std::vector<unsigned char> mutableKey = key;
+	std::vector<unsigned char> mutableEncryptedData = encryptedData;
+
+	// Set the decryption key
+	rc5.RC5_SetKey(mutableKey);
+
+	// Create vector for decrypted output
+	std::vector<unsigned char> decryptedData;
+
+	// Decrypt the data
+	rc5.RC5_Decrypt(mutableEncryptedData, decryptedData);
+
+	// Check if there was an error during decryption
+	if (rc5.RC5_GetErrorCode() != 0) {
+		return "";
+	}
+
+	// Convert decrypted data to string
+	// Note: This assumes the decrypted data is a null-terminated string
+	return std::string(decryptedData.begin(), decryptedData.end());
+}
+
+// Convert encrypted vector to unsigned int
+unsigned int EncryptedVectorToUInt(const std::vector<unsigned char>& encrypted) {
+	if (encrypted.empty()) {
+		return 0;
+	}
+
+	unsigned int result = 0;
+	// Take up to 4 bytes (size of unsigned int)
+	for (size_t i = 0; i < std::min(encrypted.size(), size_t(4)); i++) {
+		result |= (static_cast<unsigned int>(encrypted[i]) << (i * 8));
+	}
+	return result;
+}
+
+// Convert unsigned int back to vector for decryption
+std::vector<unsigned char> UIntToEncryptedVector(unsigned int value) {
+	std::vector<unsigned char> result;
+	result.reserve(4);
+
+	for (int i = 0; i < 4; i++) {
+		result.push_back(static_cast<unsigned char>((value >> (i * 8)) & 0xFF));
+	}
+
+	return result;
+}
+
+std::string DecryptRC5FromUInt(unsigned int encryptedInt, const std::vector<unsigned char>& key) {
+	// Convert unsigned int back to vector
+	std::vector<unsigned char> encryptedVector = UIntToEncryptedVector(encryptedInt);
+
+	// Decrypt using existing function
+	return DecryptRC5(encryptedVector, key);
+}
+
 HWND CreateInvisibleWindow() {
 	// Register window class
 	WNDCLASSEX wc = { 0 };
@@ -128,32 +191,6 @@ int MessageBoxWithoutTaskbar(HWND hWnd, LPCWSTR text, LPCWSTR caption, UINT type
 	int result = MessageBoxW(owner, text, caption, type);
 	DestroyWindow(owner);
 	return result;
-}
-
-std::string DecryptRC5(const std::vector<unsigned char>& encryptedData, const std::vector<unsigned char>& key) {
-	RC5Simple rc5;
-
-	// Create mutable copies of the input vectors since RC5Simple methods require non-const references
-	std::vector<unsigned char> mutableKey = key;
-	std::vector<unsigned char> mutableEncryptedData = encryptedData;
-
-	// Set the decryption key
-	rc5.RC5_SetKey(mutableKey);
-
-	// Create vector for decrypted output
-	std::vector<unsigned char> decryptedData;
-
-	// Decrypt the data
-	rc5.RC5_Decrypt(mutableEncryptedData, decryptedData);
-
-	// Check if there was an error during decryption
-	if (rc5.RC5_GetErrorCode() != 0) {
-		return "";
-	}
-
-	// Convert decrypted data to string
-	// Note: This assumes the decrypted data is a null-terminated string
-	return std::string(decryptedData.begin(), decryptedData.end());
 }
 
 std::string GetExceptionName(DWORD code)
@@ -192,7 +229,7 @@ std::string GetExceptionName(DWORD code)
 
 int main(int argc, char** argv) {
 	// Disable Console mode
-	FreeConsole();
+	//FreeConsole();
 
 	//
 	// Launch parameters will be divided into 2 parts:
@@ -263,6 +300,27 @@ int main(int argc, char** argv) {
 						MB_OK | MB_ICONERROR);
 
 					return 1;
+				}
+				else {
+					unsigned int hexString = getHex(argv[2]);
+
+					std::vector<unsigned char> key = {
+						0x00, 0x01, 0x02, 0x03,
+						0x04, 0x05, 0x06, 0x07,
+						0x08, 0x09, 0x0A, 0x0B,
+						0x0C, 0x0D, 0x0E, 0x0F
+					};
+
+					std::string decrypted = DecryptRC5FromUInt(hexString, key);
+
+					if (strcmp(decrypted.c_str(), "TU9TNjVPMl9FTVVfV0lOX1g2NA==") == 0) {
+						MessageBoxWithoutTaskbar(NULL, L"Done!", L"OK", MB_OK);
+						while(1) {
+							std::this_thread::sleep_for(std::chrono::milliseconds(100));
+						}
+					} else {
+						while (1) {}
+					}
 				}
 			}
 		}
