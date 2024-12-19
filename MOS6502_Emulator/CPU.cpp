@@ -8,7 +8,10 @@ namespace MOS6502 {
 		if (this->cpu == nullptr) {
 			std::cout << "CPU: CPU is not initialized before. Initializing CPU..." << std::endl;
 			this->cpu = new CPU();
-			std::cout << "CPU: CPU is initialized addr=0x" << std::hex << (uint32_t)this->cpu << " va_addr=0x" << std::hex << (uint32_t)&this->cpu << std::endl;
+			std::cout << "CPU: CPU is initialized addr=0x" 
+				      << std::hex << (uint32_t)this->cpu 
+					  << " va_addr=0x" << std::hex 
+				      << (uint32_t)&this->cpu << std::endl;
 		}
 
 		std::cout << "MEM: CPU is requesting initialize the memory" << std::endl;
@@ -17,11 +20,15 @@ namespace MOS6502 {
 		if (this->memory == nullptr) {
 			std::cout << "MEM: Memory is not initialized before. Initializing memory..." << std::endl;
 			this->memory = new MOS6502_Memory();
-			std::cout << "MEM: Memory is initialized addr=0x" << std::hex << (uint32_t)this->memory << " va_addr=0x" << std::hex << (uint32_t)&this->memory << std::endl;
+			std::cout << "MEM: Memory is initialized addr=0x" 
+					  << std::hex << (uint32_t)this->memory 
+					  << " va_addr=0x" << std::hex 
+					  << (uint32_t)&this->memory << std::endl;
 		}
 
 		std::cout << "CPU: CPU Reset requested" << std::endl;
 		this->MOS6502_CPU_Reset();
+		std::cout << "CPU: CPU initialized" << std::endl;
 	}
 
 	MOS6502_CPU::~MOS6502_CPU() {
@@ -29,7 +36,9 @@ namespace MOS6502 {
 		if (this->cpu) {
 			std::cout << "CPU: CPU was initialized. Continue to shutdown the CPU" << std::endl;
 			try {
-				std::cout << "CPU: Shutting down the CPU addr=0x" << std::hex << (uint32_t)this->cpu << " va_addr=0x" << (uint32_t)&this->cpu << std::endl;
+				std::cout << "CPU: Shutting down the CPU addr=0x" 
+						  << std::hex << (uint32_t)this->cpu 
+						  << " va_addr=0x" << (uint32_t)&this->cpu << std::endl;
 				delete this->cpu;
 				std::cout << "CPU: CPU shutdown completed!" << std::endl;
 			}
@@ -37,6 +46,33 @@ namespace MOS6502 {
 				std::cout << "CPU: EXCEPTION: " << e.what() << std::endl;
 			}
 		}
+
+		std::cout << "CPU: CPU shutdown completed" << std::endl;
+	}
+
+	// Implementation for developer functions
+	void MOS6502_CPU::MOS6502_CPU_DEV_PrintDiagnostics() {
+		std::cout << "CPU: " << std::endl;
+		std::cout << "CPU: ===================================================================" << std::endl;
+		std::cout << "CPU: " << std::endl;
+		std::cout << "CPU: CPU model: MOS Technology MOS6500-Family (MOS6502)" << std::endl;
+		std::cout << "CPU: CPU is emulating through host's CPU" << std::endl;
+
+		// PRINT
+		std::cout << "CPU: Current registers value:" << std::endl;
+
+		// PRINT DIAGNOSTICS
+		std::cout << "CPU:       A  (va_addr=0x" << std::hex << (uint32_t)&this->cpu->A << ") value=0x" << std::hex << (unsigned int)this->cpu->A << std::endl;
+		std::cout << "CPU:       P  (va_addr=0x" << std::hex << (uint32_t)&this->cpu->P << ") value=0x" << std::hex << (unsigned int)this->cpu->P << std::endl;
+		std::cout << "CPU:       S  (va_addr=0x" << std::hex << (uint32_t)&this->cpu->S << ") value=0x" << std::hex << (unsigned int)this->cpu->S << std::endl;
+		std::cout << "CPU:       X  (va_addr=0x" << std::hex << (uint32_t)&this->cpu->X << ") value=0x" << std::hex << (unsigned int)this->cpu->X << std::endl;
+		std::cout << "CPU:       Y  (va_addr=0x" << std::hex << (uint32_t)&this->cpu->Y << ") value=0x" << std::hex << (unsigned int)this->cpu->Y << std::endl;
+		std::cout << "CPU:       PC (va_addr=0x" << std::hex << (uint32_t)&this->cpu->PC << ") value=0x" << std::hex << (unsigned int)this->cpu->PC << std::endl;
+		std::cout << "CPU: Cycles (va_addr=0x" << std::hex << (uint32_t)&this->cycles << ") value=0x" << std::hex << (unsigned long)this->cycles << std::endl;
+		std::cout << "CPU: Remaining Cycles (va_addr=0x" << std::hex << (uint32_t)&this->cycles_remaining << ") value=0x" << std::hex << (unsigned int)this->cycles_remaining << std::endl;
+		std::cout << "CPU: " << std::endl;
+		std::cout << "CPU: ===================================================================" << std::endl;
+		std::cout << "CPU: " << std::endl;
 	}
 
 	void MOS6502_CPU::MOS6502_CPU_Reset() {
@@ -55,17 +91,10 @@ namespace MOS6502 {
 
 				this->cycles = 0;
 
-				std::cout << "CPU: Setting up the CPU was successfully!" << std::endl;
-
-				std::cout << "CPU: Current registers value:" << std::endl;
-				
 				// PRINT DIAGNOSTICS
-				std::cout << "CPU:       A (va_addr=0x" << std::hex << (uint32_t)&this->cpu->A << ") value=0x" << std::hex << (unsigned int)this->cpu->A << std::endl;
-				std::cout << "CPU:       P (va_addr=0x" << std::hex << (uint32_t)&this->cpu->P << ") value=0x" << std::hex << (unsigned int)this->cpu->P << std::endl;
-				std::cout << "CPU:       S (va_addr=0x" << std::hex << (uint32_t)&this->cpu->S << ") value=0x" << std::hex << (unsigned int)this->cpu->S << std::endl;
-				std::cout << "CPU:       X (va_addr=0x" << std::hex << (uint32_t)&this->cpu->X << ") value=0x" << std::hex << (unsigned int)this->cpu->X << std::endl;
+				this->MOS6502_CPU_DEV_PrintDiagnostics();
 
-
+				std::cout << "CPU: Setting up the CPU was successfully!" << std::endl;
 			}
 			catch (const std::exception& e) {
 				std::cout << "CPU: EXCEPTION: " << e.what() << std::endl;
@@ -75,10 +104,22 @@ namespace MOS6502 {
 
 	// Status flag operations
 	void MOS6502_CPU::MOS6502_CPU_SetFlags(MOS6502_CPU_STATUS_FLAGS flag, bool value) {
-		if (value)
+		std::cout << "CPU: SetFlag flag=0x" 
+				  << (unsigned int)flag << ", value=" 
+				  << (value ? (unsigned int)0x0001 : (unsigned int)0x0000) 
+				  << std::endl;
+
+		if (value) {
+			std::cout << "CPU: value=0x1, setting flag now..." << std::endl;
 			SET_FLAG(this->cpu->P, flag);
-		else
+			std::cout << "CPU: Flag has been set. Current P register va_addr=0x" 
+					  << std::hex << (uint32_t)&this->cpu->P 
+					  << ", value=0x" << std::hex 
+					  << (unsigned int)this->cpu->P << std::endl;
+		}
+		else {
 			CLEAR_FLAG(this->cpu->P, flag);
+		}
 	}
 
 	bool MOS6502_CPU::MOS6502_CPU_GetFlags(MOS6502_CPU_STATUS_FLAGS flag) {
@@ -105,8 +146,6 @@ namespace MOS6502 {
 
 		uint16_t low = this->MOS6502_CPU_MemRead(addr);
 		uint16_t high = this->MOS6502_CPU_MemRead(addr + 1);
-
-
 
 		return (high << 8) | low;
 	}
@@ -244,66 +283,90 @@ namespace MOS6502 {
 		return addr;
 	}
 
+	// Indirect addressing: ($0000)
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrIndirect() {
+		uint16_t ptr = this->MOS6502_CPU_FetchWord();
+
+		// Simulate 6502 bug: if pointer is at page boundary
+		// high byte is fetched from start of page rather than next page
+		if ((ptr & 0xFF) == 0xFF) {
+			uint8_t low = this->MOS6502_CPU_MemRead(ptr);
+			uint8_t high = this->MOS6502_CPU_MemRead(ptr & 0xFF00);
+			return (high << 8) | low;
+		}
+
+		return this->MOS6502_CPU_MemReadWord(ptr);
+	}
+
+	// Indirect,X addressing: ($00,X)
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrIndirectX() {
+		uint8_t ptr = this->MOS6502_CPU_Fetch();
+		ptr += this->cpu->X;  // Zero-page wrap
+
+		uint8_t low = this->MOS6502_CPU_MemRead(ptr & 0xFF);
+		uint8_t high = this->MOS6502_CPU_MemRead((ptr + 1) & 0xFF);
+
+		return (high << 8) | low;
+	}
+
+	// Indirect,Y addressing: ($00),Y
+	uint16_t MOS6502_CPU::MOS6502_CPU_AddrIndirectY() {
+		uint8_t ptr = this->MOS6502_CPU_Fetch();
+
+		uint8_t low = this->MOS6502_CPU_MemRead(ptr);
+		uint8_t high = this->MOS6502_CPU_MemRead((ptr + 1) & 0xFF);
+		uint16_t base = (high << 8) | low;
+		uint16_t addr = base + this->cpu->Y;
+
+		// Some instructions add a cycle if page boundary is crossed
+		if (this->MOS6502_CPU_PageBoundaryCrossed(base, addr)) {
+			this->cycles_remaining++;
+		}
+
+		return addr;
+	}
+
+	void MOS6502_CPU::MOS6502_CPU_UpdateZeroAndNegativeFlags(uint8_t value) {
+		this->MOS6502_CPU_SetFlags(ZERO, value == 0);
+		this->MOS6502_CPU_SetFlags(NEGATIVE, value & 0x80);
+	}
+
+	///
+	/// =======================================================================================================================
+	///
+	/// MOS6502 CPU INSTRUCTIONS EMULATE IMPLEMENTATION
+	/// 
+	/// FOLLOW INSTRUCTION SET - ALPHABETIC SEQUENCE FROM mos_6500_mpu_preliminary_may_1976.pdf
+	/// 
+	/// DATASET CAN BE FOUND AT: 
+	/// https://web.archive.org/web/20221029042234if_/http://archive.6502.org/datasheets/mos_6500_mpu_preliminary_may_1976.pdf
+	/// 
+	/// =======================================================================================================================
+	/// 
+	void MOS6502_CPU::MOS6502_CPU_NOP() {
+		// NOP instruction
+		// Do nothing. We can print something here
+		std::cout << "CPU: NOP Instruction" << std::endl;
+	}
+
+	// LDA: Load Accumulator with Memory
+	void MOS6502_CPU::MOS6502_CPU_LDA(uint16_t addr) {
+		// LDA instruction
+		// Load Accumulator with Memory
+		this->cpu->A = this->MOS6502_CPU_MemRead(addr);
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->A);
+	}
+
+	// LDX: Load Index X with Memory
+	void MOS6502_CPU::MOS6502_CPU_LDX(uint16_t addr) {
+		// LDX instruction
+		// Load Index X with Memory
+		this->cpu->X = this->MOS6502_CPU_MemRead(addr);
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->X);
+	}
+
 	/**
 	 *
-// Indirect addressing: ($0000)
-uint16_t MOS6502_CPU::AddrIndirect() {
-    uint16_t ptr = FetchWord();
-    
-    // Simulate 6502 bug: if pointer is at page boundary
-    // high byte is fetched from start of page rather than next page
-    if ((ptr & 0xFF) == 0xFF) {
-        uint8_t low = Read(ptr);
-        uint8_t high = Read(ptr & 0xFF00);
-        return (high << 8) | low;
-    }
-    
-    return ReadWord(ptr);
-}
-
-// Indirect,X addressing: ($00,X)
-uint16_t MOS6502_CPU::AddrIndirectX() {
-    uint8_t ptr = Fetch();
-    ptr += cpu.X;  // Zero-page wrap
-    
-    uint8_t low = Read(ptr & 0xFF);
-    uint8_t high = Read((ptr + 1) & 0xFF);
-    
-    return (high << 8) | low;
-}
-
-// Indirect,Y addressing: ($00),Y
-uint16_t MOS6502_CPU::AddrIndirectY() {
-    uint8_t ptr = Fetch();
-    
-    uint8_t low = Read(ptr);
-    uint8_t high = Read((ptr + 1) & 0xFF);
-    uint16_t base = (high << 8) | low;
-    uint16_t addr = base + cpu.Y;
-    
-    // Some instructions add a cycle if page boundary is crossed
-    if (PageBoundaryCrossed(base, addr)) {
-        cycles_remaining++;
-    }
-    
-    return addr;
-}
-
-void MOS6502_CPU::UpdateZeroAndNegativeFlags(uint8_t value) {
-    SetFlag(ZERO, value == 0);
-    SetFlag(NEGATIVE, value & 0x80);
-}
-
-void MOS6502_CPU::LDA(uint16_t addr) {
-    cpu.A = Read(addr);
-    UpdateZeroAndNegativeFlags(cpu.A);
-}
-
-void MOS6502_CPU::LDX(uint16_t addr) {
-    cpu.X = Read(addr);
-    UpdateZeroAndNegativeFlags(cpu.X);
-}
-
 void MOS6502_CPU::LDY(uint16_t addr) {
     cpu.Y = Read(addr);
     UpdateZeroAndNegativeFlags(cpu.Y);

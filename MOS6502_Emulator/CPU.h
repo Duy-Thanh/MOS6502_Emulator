@@ -77,6 +77,7 @@ namespace MOS6502 {
 		void MOS6502_CPU_STA(uint16_t addr);  // Store Accumulator
 		void MOS6502_CPU_STX(uint16_t addr);  // Store X Register
 		void MOS6502_CPU_STY(uint16_t addr);  // Store Y Register
+		void MOS6502_CPU_NOP();				  // NOP Instruction
 
 		// Add cycle counting for page boundary crosses
 		bool MOS6502_CPU_PageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
@@ -86,6 +87,9 @@ namespace MOS6502 {
 	public:
 		MOS6502_CPU();
 		~MOS6502_CPU();
+
+		// Helper functions
+		void MOS6502_CPU_DEV_PrintDiagnostics();
 
 		// Memory operations
 		uint8_t MOS6502_CPU_MemRead(uint16_t addr);
