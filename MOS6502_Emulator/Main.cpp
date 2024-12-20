@@ -1,10 +1,13 @@
+#define SDL_MAIN_HANDLED
+
+#include <SDL2/SDL.h>
 #include "CPU.h"
 
 #include <iostream>
 #include <chrono>
 #include <thread>
 
-int main() {
+int main(int argc, char* argv[]) {
 	std::cout << "MAIN: Machine starting..." << std::endl;
 
 	std::cout << "--------------------------------------------------------------------------------" << std::endl;
@@ -18,7 +21,15 @@ int main() {
 	std::cout << "--------------------------------------------------------------------------------" << std::endl;
 	std::cout << "\n\n";
 
-	MOS6502::MOS6502_CPU cpu;
+	MOS6502::Display display;
+	if (!display.Initialize()) {
+		std::cout << "MAIN: FATAL: Failed to initialize display!" << std::endl;
+		return -1;
+	}
+
+	MOS6502::MOS6502_Memory memory(&display);
+
+	MOS6502::MOS6502_CPU cpu(&memory);
 
 	std::cout << "MAIN: cpu_var_addr=0x" << std::hex << (uint32_t) & cpu << std::endl;
 
@@ -27,12 +38,26 @@ int main() {
 	std::cout << "MAIN: Machine state is set to RUNNING" << std::endl;
 
 	while (running) {
-		cpu.MOS6502_CPU_Clock();
+		SDL_Event event;
 
-		if (cpu.MOS6502_CPU_Complete()) {
-			// Do something when CPU completed executing the instructions
-			// Eg. Breakpoint, debug, etc.
+		while (SDL_PollEvent(&event)) {
+			if (event.type == SDL_QUIT) {
+				running = false;
+			}
 		}
+
+		for (int i = 0; i < 1000 && running; i++) {
+			cpu.MOS6502_CPU_Clock();
+		}
+
+		display.Update();
+
+		//if (cpu.MOS6502_CPU_Complete()) {
+		//	// Do something when CPU completed executing the instructions
+		//	// Eg. Breakpoint, debug, etc.
+		//}
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
 	return 0;

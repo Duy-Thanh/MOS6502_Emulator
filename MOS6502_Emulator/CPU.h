@@ -78,6 +78,16 @@ namespace MOS6502 {
 		void MOS6502_CPU_STX(uint16_t addr);  // Store X Register
 		void MOS6502_CPU_STY(uint16_t addr);  // Store Y Register
 		void MOS6502_CPU_NOP();				  // NOP Instruction
+		void MOS6502_CPU_TAX();				  // TAX
+		void MOS6502_CPU_TAY();				  // TAY
+		void MOS6502_CPU_TXA();               // TXA
+		void MOS6502_CPU_TYA();               // TYA
+		void MOS6502_CPU_INX();               // INX
+		void MOS6502_CPU_INY();	              // INY
+		void MOS6502_CPU_DEX();               // DEX
+		void MOS6502_CPU_DEY();               // DEY
+		void MOS6502_CPU_BNE(int8_t offset);  // BNE $<int8_t>
+		void MOS6502_CPU_JMP(uint16_t addr);  // JMP $<addr>
 
 		// Add cycle counting for page boundary crosses
 		bool MOS6502_CPU_PageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
@@ -85,7 +95,7 @@ namespace MOS6502 {
 		// Helper for setting Zero and Negative flags
 		void MOS6502_CPU_UpdateZeroAndNegativeFlags(uint8_t value);
 	public:
-		MOS6502_CPU();
+		MOS6502_CPU(MOS6502_Memory* memory);
 		~MOS6502_CPU();
 
 		// Helper functions

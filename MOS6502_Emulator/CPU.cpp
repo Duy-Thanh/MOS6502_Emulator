@@ -1,7 +1,7 @@
 #include "CPU.h"
 
 namespace MOS6502 {
-	MOS6502_CPU::MOS6502_CPU() {
+	MOS6502_CPU::MOS6502_CPU(MOS6502_Memory* memory) : memory(memory) {
 		// Initialize CPU register (Important)
 		std::cout << "CPU: Trying initialize CPU" << std::endl;
 
@@ -17,15 +17,6 @@ namespace MOS6502 {
 		std::cout << "MEM: CPU is requesting initialize the memory" << std::endl;
 		std::cout << "MEM: Trying initialize memory" << std::endl;
 
-		if (this->memory == nullptr) {
-			std::cout << "MEM: Memory is not initialized before. Initializing memory..." << std::endl;
-			this->memory = new MOS6502_Memory();
-			std::cout << "MEM: Memory is initialized addr=0x" 
-					  << std::hex << (uint32_t)this->memory 
-					  << " va_addr=0x" << std::hex 
-					  << (uint32_t)&this->memory << std::endl;
-		}
-
 		std::cout << "CPU: CPU Reset requested" << std::endl;
 		this->MOS6502_CPU_Reset();
 		std::cout << "CPU: CPU initialized" << std::endl;
@@ -39,7 +30,13 @@ namespace MOS6502 {
 				std::cout << "CPU: Shutting down the CPU addr=0x" 
 						  << std::hex << (uint32_t)this->cpu 
 						  << " va_addr=0x" << (uint32_t)&this->cpu << std::endl;
-				delete this->cpu;
+				try {
+					delete this->cpu;
+				}
+				catch (const std::exception& e) {
+					std::cout << "CPU: EXCEPTION: " << e.what() << std::endl;
+					return;
+				}
 				std::cout << "CPU: CPU shutdown completed!" << std::endl;
 			}
 			catch (const std::exception& e) {
@@ -87,6 +84,7 @@ namespace MOS6502 {
 				this->cpu->X = 0x00;
 				this->cpu->Y = 0x00;
 
+				// Jumping to RESET vector
 				this->cpu->PC = this->MOS6502_CPU_MemReadWord(0xFFFC);
 
 				this->cycles = 0;
@@ -199,7 +197,8 @@ namespace MOS6502 {
 		if (this->cycles_remaining == 0) {
 			this->opcode = this->MOS6502_CPU_Fetch();
 
-			this->cycles_remaining = this->MOS6502_CPU_GetInstructionCycles(this->opcode);
+			this->
+				cycles_remaining = this->MOS6502_CPU_GetInstructionCycles(this->opcode);
 
 			this->MOS6502_CPU_ExecuteInstruction(this->opcode);
 		}
@@ -208,16 +207,6 @@ namespace MOS6502 {
 	uint8_t MOS6502_CPU::MOS6502_CPU_GetInstructionCycles(uint8_t opcode) {
 		std::cout << "CPU: GetInstructionCycles: opcode = 0x" << std::hex << (unsigned int)opcode << std::endl;
 		return 2;
-	}
-
-	void MOS6502_CPU::MOS6502_CPU_ExecuteInstruction(uint8_t opcode) {
-		std::cout << "CPU: ExecuteInstruction: opcode = 0x" << std::hex << (unsigned int)opcode << std::endl;
-		switch (opcode) {
-		default:
-			std::cout << "CPU: CPU has received unknown opcode when trying execute instruction. Jumping to FAILBACK_DEFAULT_ACTION!" << std::endl;
-			std::cout << "CPU: ExecutionInstruction: FAILBACK_DEFAULT_ACTION: Unknown opcode: 0x" << std::hex << (unsigned int)opcode << std::endl;
-			break;
-		}
 	}
 
 	bool MOS6502_CPU::MOS6502_CPU_Complete() {
@@ -342,7 +331,9 @@ namespace MOS6502 {
 	/// https://web.archive.org/web/20221029042234if_/http://archive.6502.org/datasheets/mos_6500_mpu_preliminary_may_1976.pdf
 	/// 
 	/// =======================================================================================================================
-	/// 
+	///
+	
+	// NOP
 	void MOS6502_CPU::MOS6502_CPU_NOP() {
 		// NOP instruction
 		// Do nothing. We can print something here
@@ -365,52 +356,160 @@ namespace MOS6502 {
 		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->X);
 	}
 
-	/**
-	 *
-void MOS6502_CPU::LDY(uint16_t addr) {
-    cpu.Y = Read(addr);
-    UpdateZeroAndNegativeFlags(cpu.Y);
-}
+	// LDY
+	void MOS6502_CPU::MOS6502_CPU_LDY(uint16_t addr) {
+		this->cpu->Y = this->MOS6502_CPU_MemRead(addr);
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->Y);
+	}
 
-void MOS6502_CPU::STA(uint16_t addr) {
-    Write(addr, cpu.A);
-}
+	// STA
+	void MOS6502_CPU::MOS6502_CPU_STA(uint16_t addr) {
+		this->MOS6502_CPU_MemWrite(addr, this->cpu->A);
+	}
 
-void MOS6502_CPU::STX(uint16_t addr) {
-    Write(addr, cpu.X);
-}
+	// STX
+	void MOS6502_CPU::MOS6502_CPU_STX(uint16_t addr) {
+		this->MOS6502_CPU_MemWrite(addr, this->cpu->X);
+	}
 
-void MOS6502_CPU::STY(uint16_t addr) {
-    Write(addr, cpu.Y);
-}
+	// STY
+	void MOS6502_CPU::MOS6502_CPU_STY(uint16_t addr) {
+		this->MOS6502_CPU_MemWrite(addr, this->cpu->Y);
+	}
 
-void MOS6502_CPU::ExecuteInstruction(uint8_t opcode) {
-    switch (opcode) {
-        // LDA
-        case 0xA9: LDA(AddrImmediate()); break;  // LDA Immediate
-        case 0xA5: LDA(AddrZeroPage()); break;   // LDA Zero Page
-        case 0xB5: LDA(AddrZeroPageX()); break;  // LDA Zero Page,X
-        case 0xAD: LDA(AddrAbsolute()); break;   // LDA Absolute
-        case 0xBD: LDA(AddrAbsoluteX()); break;  // LDA Absolute,X
-        case 0xB9: LDA(AddrAbsoluteY()); break;  // LDA Absolute,Y
-        case 0xA1: LDA(AddrIndirectX()); break;  // LDA (Indirect,X)
-        case 0xB1: LDA(AddrIndirectY()); break;  // LDA (Indirect),Y
+	// TAX
+	void MOS6502_CPU::MOS6502_CPU_TAX() {
+		this->cpu->X = this->cpu->A;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->X);
+	}
 
-        // STA
-        case 0x85: STA(AddrZeroPage()); break;   // STA Zero Page
-        case 0x95: STA(AddrZeroPageX()); break;  // STA Zero Page,X
-        case 0x8D: STA(AddrAbsolute()); break;   // STA Absolute
-        case 0x9D: STA(AddrAbsoluteX()); break;  // STA Absolute,X
-        case 0x99: STA(AddrAbsoluteY()); break;  // STA Absolute,Y
-        case 0x81: STA(AddrIndirectX()); break;  // STA (Indirect,X)
-        case 0x91: STA(AddrIndirectY()); break;  // STA (Indirect),Y
+	// TAY
+	void MOS6502_CPU::MOS6502_CPU_TAY() {
+		this->cpu->Y = this->cpu->A;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->Y);
+	}
 
-        // Add more instructions here...
+	// TXA
+	void MOS6502_CPU::MOS6502_CPU_TXA() {
+		this->cpu->A = this->cpu->X;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->A);
+	}
 
-        default:
-            std::cout << "Unknown opcode: 0x" << std::hex << (int)opcode << std::endl;
-            break;
-    }
-}
-	 */
+	// TYA
+	void MOS6502_CPU::MOS6502_CPU_TYA() {
+		this->cpu->A = this->cpu->Y;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->A);
+	}
+
+	// INX
+	void MOS6502_CPU::MOS6502_CPU_INX() {
+		this->cpu->X++;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->X);
+	}
+
+	// INY
+	void MOS6502_CPU::MOS6502_CPU_INY() {
+		this->cpu->Y++;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->Y);
+	}
+
+	// DEX
+	void MOS6502_CPU::MOS6502_CPU_DEX() {
+		this->cpu->X--;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->X);
+	}
+
+	// DEY
+	void MOS6502_CPU::MOS6502_CPU_DEY() {
+		this->cpu->Y--;
+		this->MOS6502_CPU_UpdateZeroAndNegativeFlags(this->cpu->Y);
+	}
+
+	//
+	// Branch Instructions
+	//
+	void MOS6502_CPU::MOS6502_CPU_BNE(int8_t offset) {
+		if (!this->MOS6502_CPU_GetFlags(ZERO)) {
+			uint16_t old_pc = this->cpu->PC;
+			this->cpu->PC += offset;
+
+			// Add cycle when it down
+			this->cycles_remaining++;
+
+			// Add cycle if page boundary crossed
+			if (this->MOS6502_CPU_PageBoundaryCrossed(old_pc, this->cpu->PC)) {
+				this->cycles_remaining++;
+			}
+		}
+	}
+
+	// JMP
+	void MOS6502_CPU::MOS6502_CPU_JMP(uint16_t addr) {
+		this->cpu->PC = addr;
+	}
+
+	//
+	// Execute Instruction module (contain: Decode Instruction and Execute Instruction)
+	//
+	void MOS6502_CPU::MOS6502_CPU_ExecuteInstruction(uint8_t opcode) {
+		std::cout << "CPU: ExecuteInstruction: opcode = 0x" << std::hex << (unsigned int)opcode << std::endl;
+		switch (opcode) {
+			// NOP
+			case 0xEA: this->MOS6502_CPU_NOP(); break;
+
+			// LDA
+			case 0xA9: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrImmediate()); break;  // LDA Immediate
+			case 0xA5: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrZeroPage()); break;   // LDA Zero Page
+			case 0xB5: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrZeroPageX()); break;  // LDA Zero Page,X
+			case 0xAD: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrAbsolute()); break;   // LDA Absolute
+			case 0xBD: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrAbsoluteX()); break;  // LDA Absolute,X
+			case 0xB9: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrAbsoluteY()); break;  // LDA Absolute,Y
+			case 0xA1: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrIndirectX()); break;  // LDA (Indirect,X)
+			case 0xB1: this->MOS6502_CPU_LDA(this->MOS6502_CPU_AddrIndirectY()); break;  // LDA (Indirect),Y
+
+			case 0xA2: this->MOS6502_CPU_LDX(this->MOS6502_CPU_AddrImmediate()); break;  // LDX #$nn
+			case 0xA6: this->MOS6502_CPU_LDX(this->MOS6502_CPU_AddrZeroPage()); break;   // LDX $nn
+			case 0xB6: this->MOS6502_CPU_LDX(this->MOS6502_CPU_AddrZeroPageY()); break;  // LDX $nn,Y
+			case 0xAE: this->MOS6502_CPU_LDX(this->MOS6502_CPU_AddrAbsolute()); break;   // LDX $nnnn
+			case 0xBE: this->MOS6502_CPU_LDX(this->MOS6502_CPU_AddrAbsoluteY()); break;  // LDX $nnnn,Y
+
+			case 0xA0: this->MOS6502_CPU_LDY(this->MOS6502_CPU_AddrImmediate()); break;  // LDY #$nn
+			case 0xA4: this->MOS6502_CPU_LDY(this->MOS6502_CPU_AddrZeroPage()); break;   // LDY $nn
+			case 0xB4: this->MOS6502_CPU_LDY(this->MOS6502_CPU_AddrZeroPageX()); break;  // LDY $nn,X
+			case 0xAC: this->MOS6502_CPU_LDY(this->MOS6502_CPU_AddrAbsolute()); break;   // LDY $nnnn
+			case 0xBC: this->MOS6502_CPU_LDY(this->MOS6502_CPU_AddrAbsoluteX()); break;  // LDY $nnnn,X
+
+			// STA
+			case 0x85: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrZeroPage()); break;   // STA Zero Page
+			case 0x95: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrZeroPageX()); break;  // STA Zero Page,X
+			case 0x8D: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrAbsolute()); break;   // STA Absolute
+			case 0x9D: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrAbsoluteX()); break;  // STA Absolute,X
+			case 0x99: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrAbsoluteY()); break;  // STA Absolute,Y
+			case 0x81: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrIndirectX()); break;  // STA (Indirect,X)
+			case 0x91: this->MOS6502_CPU_STA(this->MOS6502_CPU_AddrIndirectY()); break;  // STA (Indirect),Y
+
+			// Transfer instructions
+			case 0xAA: this->MOS6502_CPU_TAX(); break; // TAX
+			case 0xA8: this->MOS6502_CPU_TAY(); break; // TAY
+			case 0x8A: this->MOS6502_CPU_TXA(); break; // TXA
+			case 0x98: this->MOS6502_CPU_TYA(); break; // TYA
+
+			// Increment/Decrement
+			case 0xE8: this->MOS6502_CPU_INX(); break; // INX
+			case 0xC8: this->MOS6502_CPU_INY(); break; // INY
+			case 0xCA: this->MOS6502_CPU_DEX(); break; // DEX
+			case 0x88: this->MOS6502_CPU_DEY(); break; // DEY
+
+			// Branch
+			case 0xD0: this->MOS6502_CPU_BNE(this->MOS6502_CPU_Fetch()); break; // BNE $<addr>
+
+			// Jump
+			case 0x4C: this->MOS6502_CPU_JMP(this->MOS6502_CPU_AddrAbsolute()); break;
+
+			default:
+				std::cout << "CPU: CPU has received unknown opcode when trying execute instruction. Jumping to FAILBACK_DEFAULT_ACTION!" << std::endl;
+				std::cout << "CPU: ExecutionInstruction: FAILBACK_DEFAULT_ACTION: Unknown opcode: 0x" << std::hex << (unsigned int)opcode << std::endl;
+				break;
+		}
+	}
 }													 

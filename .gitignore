@@ -16,3 +16,4 @@ MOS6502_Emulator/x64/Release/*
 CrashHandler/x64/*
 CrashHandler/x64/Debug/*
 CrashHandler/x64/Release/*
+vcpkg/*
