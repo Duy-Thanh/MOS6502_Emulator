@@ -5,17 +5,21 @@ namespace MOS6502 {
 		texture(nullptr), pixels(nullptr) { }
 
 	Display::~Display() {
-		try {
-			if (this->pixels) delete[] this->pixels;
-			if (this->texture) SDL_DestroyTexture(this->texture);
-			if (this->renderer) SDL_DestroyRenderer(this->renderer);
-			if (this->window) SDL_DestroyWindow(this->window);
-
-			SDL_Quit();
+		if (pixels) {
+			delete[] pixels;
+			pixels = nullptr;
 		}
-		catch (const std::exception& e) {
-			std::cout << "DISPLAY: SDL_Error: " << SDL_GetError() << std::endl;
-			std::cout << "DISPLAY: EXCEPTION: " << e.what() << std::endl;
+		if (texture) {
+			SDL_DestroyTexture(texture);
+			texture = nullptr;
+		}
+		if (renderer) {
+			SDL_DestroyRenderer(renderer);
+			renderer = nullptr;
+		}
+		if (window) {
+			SDL_DestroyWindow(window);
+			window = nullptr;
 		}
 	}
 
@@ -66,19 +70,26 @@ namespace MOS6502 {
 	void Display::WritePixel(uint16_t addr, uint8_t value) {
 		if (addr >= this->DISPLAY_START && addr < this->DISPLAY_END) {
 			uint16_t pixel_addr = addr - this->DISPLAY_START;
-			if (pixel_addr < WIDTH * HEIGHT) {  // Add bounds check
-				// Convert 8-bit color to 32-bit ARGB
-				uint32_t color = (value << 16) | (value << 8) | value;
-				this->pixels[pixel_addr] = color | 0xFF000000; // Set alpha to full
-
-				// Debug output
-				std::cout << "DISPLAY: Writing pixel at " << pixel_addr
-					<< " with value " << (int)value << std::endl;
+			if (pixel_addr < WIDTH * HEIGHT) {
+				// Make color more visible and add debug output
+				uint32_t color = (value > 0) ? 0xFFFFFFFF : 0xFF000000;
+				this->pixels[pixel_addr] = color;
+				
+				if (pixel_addr % 256 == 0) {  // Log every 256th pixel to avoid spam
+					std::cout << "DISPLAY: Writing pixel at " << std::dec << pixel_addr 
+								<< " with value 0x" << std::hex << (int)value 
+								<< " (color: 0x" << std::hex << color << ")" << std::endl;
+				}
 			}
 		}
 	}
 
 	void Display::Update() {
+		//static int update_count = 0;
+		//if (update_count++ % 60 == 0) {  // Log every 60 frames
+		//	std::cout << "DISPLAY: Updating frame " << update_count << std::endl;
+		//}
+		
 		SDL_UpdateTexture(this->texture, NULL, this->pixels, this->WIDTH * sizeof(uint32_t));
 		SDL_RenderClear(this->renderer);
 		SDL_RenderCopy(this->renderer, this->texture, NULL, NULL);

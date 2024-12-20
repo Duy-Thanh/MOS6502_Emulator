@@ -37,28 +37,24 @@ int main(int argc, char* argv[]) {
 
 	std::cout << "MAIN: Machine state is set to RUNNING" << std::endl;
 
-	while (running) {
+	while (running && cpu.IsRunning()) {
 		SDL_Event event;
-
 		while (SDL_PollEvent(&event)) {
 			if (event.type == SDL_QUIT) {
 				running = false;
+				cpu.Stop();
+				break;
 			}
 		}
 
-		for (int i = 0; i < 1000 && running; i++) {
-			cpu.MOS6502_CPU_Clock();
+		if (running) {
+			cpu.ExecuteNext();
+			display.Update();
+			SDL_Delay(1);
 		}
-
-		display.Update();
-
-		//if (cpu.MOS6502_CPU_Complete()) {
-		//	// Do something when CPU completed executing the instructions
-		//	// Eg. Breakpoint, debug, etc.
-		//}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds(16));
 	}
 
+	// Cleanup
+	SDL_Quit();
 	return 0;
 }

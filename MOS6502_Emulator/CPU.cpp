@@ -20,6 +20,8 @@ namespace MOS6502 {
 		std::cout << "CPU: CPU Reset requested" << std::endl;
 		this->MOS6502_CPU_Reset();
 		std::cout << "CPU: CPU initialized" << std::endl;
+
+		this->running = true;
 	}
 
 	MOS6502_CPU::~MOS6502_CPU() {
@@ -196,12 +198,10 @@ namespace MOS6502 {
 	void MOS6502_CPU::MOS6502_CPU_Clock() {
 		if (this->cycles_remaining == 0) {
 			this->opcode = this->MOS6502_CPU_Fetch();
-
-			this->
-				cycles_remaining = this->MOS6502_CPU_GetInstructionCycles(this->opcode);
-
+			this->cycles_remaining = this->MOS6502_CPU_GetInstructionCycles(this->opcode);
 			this->MOS6502_CPU_ExecuteInstruction(this->opcode);
 		}
+		this->cycles_remaining--;  // Add this line to decrement cycles
 	}
 
 	uint8_t MOS6502_CPU::MOS6502_CPU_GetInstructionCycles(uint8_t opcode) {
@@ -448,12 +448,72 @@ namespace MOS6502 {
 		this->cpu->PC = addr;
 	}
 
+	// Push a byte onto the stack
+	void MOS6502_CPU::MOS6502_CPU_Push8(uint8_t value) {
+		// Write value to current stack position
+		this->memory->Write(0x0100 + this->cpu->S, value);
+		// Decrement stack pointer
+		this->cpu->S--;
+	}
+
+	// Push a 16-bit word onto the stack
+	void MOS6502_CPU::MOS6502_CPU_Push16(uint16_t value) {
+		// Push high byte first
+		MOS6502_CPU_Push8((value >> 8) & 0xFF);
+		// Then push low byte
+		MOS6502_CPU_Push8(value & 0xFF);
+	}
+
+	// Pull a byte from the stack
+	uint8_t MOS6502_CPU::MOS6502_CPU_Pull8() {
+		// Increment stack pointer
+		this->cpu->S++;
+		// Read value from new stack position
+		return this->memory->Read(0x0100 + this->cpu->S);
+	}
+
+	// Pull a 16-bit word from the stack
+	uint16_t MOS6502_CPU::MOS6502_CPU_Pull16() {
+		// Pull low byte first
+		uint16_t low = MOS6502_CPU_Pull8();
+		// Then pull high byte
+		uint16_t high = MOS6502_CPU_Pull8();
+		// Combine into 16-bit value
+		return (high << 8) | low;
+	}
+
+	// Add BRK implementation
+	void MOS6502_CPU::MOS6502_CPU_BRK() {
+		// Push PC+2 to stack
+		this->MOS6502_CPU_Push16(this->cpu->PC + 2);
+		// Push status register to stack with break flag set
+		this->MOS6502_CPU_Push8(this->cpu->P | 0x10);
+		// Set interrupt disable flag
+		this->cpu->P |= 0x04;
+		// Load interrupt vector
+		this->cpu->PC = this->MOS6502_CPU_MemReadWord(0xFFFE);
+	}
+
+	// Execute the next instruction
+	void MOS6502_CPU::ExecuteNext() {
+		if (this->cpu && this->cpu->running) {
+			uint8_t opcode = this->MOS6502_CPU_Fetch();
+			this->MOS6502_CPU_ExecuteInstruction(opcode);
+		}
+	}
+
 	//
 	// Execute Instruction module (contain: Decode Instruction and Execute Instruction)
 	//
 	void MOS6502_CPU::MOS6502_CPU_ExecuteInstruction(uint8_t opcode) {
 		std::cout << "CPU: ExecuteInstruction: opcode = 0x" << std::hex << (unsigned int)opcode << std::endl;
 		switch (opcode) {
+			case 0x00: {// BRK - Break
+				// Proper handling of BRK instruction
+				this->MOS6502_CPU_BRK();
+				break;
+			}
+
 			// NOP
 			case 0xEA: this->MOS6502_CPU_NOP(); break;
 
@@ -509,7 +569,12 @@ namespace MOS6502 {
 			default:
 				std::cout << "CPU: CPU has received unknown opcode when trying execute instruction. Jumping to FAILBACK_DEFAULT_ACTION!" << std::endl;
 				std::cout << "CPU: ExecutionInstruction: FAILBACK_DEFAULT_ACTION: Unknown opcode: 0x" << std::hex << (unsigned int)opcode << std::endl;
+				// Halt execution or handle error more gracefully
+				this->cpu->running = false;
 				break;
+
+			// Add cycle counting
+			this->cycles += this->MOS6502_CPU_GetInstructionCycles(opcode);
 		}
 	}
 }													 

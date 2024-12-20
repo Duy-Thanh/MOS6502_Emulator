@@ -5,38 +5,29 @@ namespace MOS6502 {
 	MOS6502_Memory::MOS6502_Memory(Display* display) : display(display) { 
 		std::memset(this->data, 0, sizeof(this->data));
 
-		// Setting up reset vector
-		data[0xFFFC] = 0x00;
-		data[0xFFFD] = 0x08;
-
-		uint16_t addr = 0x0800; // Test pattern
-
-		// Initialize X and Y
-		data[addr++] = 0xA2;  // LDX #$00
+		// Setting up reset vector to point to our program
+		std::cout << "MEM: Setting up reset vector to 0x0800" << std::endl;
+		data[0xFFFC] = 0x00;  // Low byte
+		data[0xFFFD] = 0x08;  // High byte
+			// Our program starts at 0x0800
+		uint16_t addr = 0x0800;
+		
+		// Simple test pattern - write white pixels to screen
+		data[addr++] = 0xA2;  // LDX #$00    ; X = 0
 		data[addr++] = 0x00;
-		data[addr++] = 0xA0;  // LDY #$00
-		data[addr++] = 0x00;
-
-		// Main loop start
-		data[addr++] = 0x98;  // TYA (Transfer Y to A)
-		data[addr++] = 0x9D;  // STA $2000,X (Store A at $2000+X)
-		data[addr++] = 0x00;
+		
+		// Loop:
+		data[addr++] = 0xA9;  // LDA #$FF    ; A = 0xFF (white)
+		data[addr++] = 0xFF;
+		
+		data[addr++] = 0x9D;  // STA $2000,X ; Store to display memory + X
+		data[addr++] = 0x00;  
 		data[addr++] = 0x20;
-
-		// Increment X
+		
 		data[addr++] = 0xE8;  // INX
-
-		// Increment Y
-		data[addr++] = 0xC8;  // INY
-
-		// Loop if X != 0
-		data[addr++] = 0xD0;  // BNE (-10)
-		data[addr++] = 0xF6;  // Jump back 10 bytes
-
-		// Infinite loop at the end
-		data[addr++] = 0x4C;  // JMP $0800
-		data[addr++] = 0x00;
-		data[addr++] = 0x08;
+		data[addr++] = 0xD0;  // BNE Loop    ; Branch if X != 0
+		data[addr++] = 0xF8;  // -8 (relative branch)
+		std::cout << "MEM: Program loaded at 0x0800" << std::endl;
 	}
 
 	MOS6502_Memory::~MOS6502_Memory() { }

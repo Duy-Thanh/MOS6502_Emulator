@@ -16,6 +16,7 @@ typedef struct _CPU {
 	uint8_t S;					// Stack pointer (8-bit)
 	uint8_t X;					// Index register (8-bit register)
 	uint8_t Y;					// Another index register (8-bit register)
+	bool running;
 } CPU, * PCPU;
 
 //enum MOS6502_CPU_STATUS_FLAGS {
@@ -88,12 +89,19 @@ namespace MOS6502 {
 		void MOS6502_CPU_DEY();               // DEY
 		void MOS6502_CPU_BNE(int8_t offset);  // BNE $<int8_t>
 		void MOS6502_CPU_JMP(uint16_t addr);  // JMP $<addr>
+		void MOS6502_CPU_BRK();
+		void MOS6502_CPU_Push8(uint8_t value);
+		void MOS6502_CPU_Push16(uint16_t value);
+		uint8_t MOS6502_CPU_Pull8();
+		uint16_t MOS6502_CPU_Pull16();
 
 		// Add cycle counting for page boundary crosses
 		bool MOS6502_CPU_PageBoundaryCrossed(uint16_t addr1, uint16_t addr2);
 
 		// Helper for setting Zero and Negative flags
 		void MOS6502_CPU_UpdateZeroAndNegativeFlags(uint8_t value);
+
+		bool running;
 	public:
 		MOS6502_CPU(MOS6502_Memory* memory);
 		~MOS6502_CPU();
@@ -123,5 +131,10 @@ namespace MOS6502 {
 		void MOS6502_CPU_SetFlags(MOS6502_CPU_STATUS_FLAGS flag, bool value);
 		bool MOS6502_CPU_GetFlags(MOS6502_CPU_STATUS_FLAGS flag);
 		uint8_t MOS6502_CPU_get7BitStatus(uint8_t status);
+
+		bool IsRunning() const { return running; }
+		void Stop() { running = false; }
+
+		void ExecuteNext();
 	};
 }
