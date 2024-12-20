@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>F:\Scripts\MOS6502_Emulator\vcpkg\installed\x64-windows\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\Scripts\MOS6502_Emulator\vcpkg\installed\x64-windows\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\MOS6502_Emulator\vcpkg\installed\x64-windows\include;F:\Scripts\MOS6502_Emulator\vcpkg\installed\x64-windows\include;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\MOS6502_Emulator\vcpkg\installed\x64-windows\lib;F:\Scripts\MOS6502_Emulator\vcpkg\installed\x64-windows\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
